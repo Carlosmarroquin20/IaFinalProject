@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Emotion Detection</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <header>
+        <img src="{{ url_for('static', filename='banner.png') }}" alt="Banner" class="banner"> <!-- Imagen del banner -->
+    </header>
+    <div class="video-container">
+        <video id="video" width="640" height="480" autoplay></video> <!-- Elemento de video para mostrar la cámara en vivo -->
+        <canvas id="canvas" width="640" height="480" style="display:none;"></canvas> <!-- Elemento canvas para capturar fotogramas de video -->
+        <img id="emotion" src="" alt="Emotion Result"> <!-- Imagen donde se mostrará el resultado del análisis de emociones -->
+    </div>
+    <p>Si estás triste escucha esta canción: <a href="https://www.youtube.com/watch?v=G8dsvclf3Tk" target="_blank">Dale CLICK!!!</a>.</p>
+
+    <footer>
+        <div class="info">
+            <img src="{{ url_for('static', filename='last.png') }}" alt="lastt" class="lastt">
+            <p>Este programa fue desarrollado por estudiantes del noveno semestre de la carrera de Ingeniería en Sistemas de la Universidad UMG de Guatemala, campus Jalapa.</p>
+        </div>
+    </footer>
+    <script>
+        const video = document.getElementById('video');
+
+        // Solicitar acceso a la cámara
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream; // Mostrar el video en el elemento de video
+            })
+            .catch(err => {
+                console.error("Error accessing the camera: " + err); // Manejar errores de acceso a la cámara
+            });
+
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const emotionImage = document.getElementById('emotion');
+
+        video.addEventListener('play', () => {
+            // Función para procesar un fotograma de video
+            const processFrame = () => {
+                context.drawImage(video, 0, 0, canvas.width, canvas.height); // Dibujar el fotograma en el canvas
+                const dataUrl = canvas.toDataURL('image/jpeg'); // Convertir el fotograma a URL de datos en formato JPEG
+                fetch('/process_video', {
+                    method: 'POST',
+                    body: JSON.stringify({ image: dataUrl }), // Enviar el fotograma al servidor
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    emotionImage.src = 'data:image/jpeg;base64,' + data.image; // Mostrar el resultado del análisis
+                })
+                .catch(err => console.error('Error processing frame:', err)); // Manejar errores de procesamiento
+            };
+
+            setInterval(processFrame, 200);  // Capturar y procesar un fotograma cada 200 ms
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+opencv-python
+deepface
+tf_keras
+dlib
+time
